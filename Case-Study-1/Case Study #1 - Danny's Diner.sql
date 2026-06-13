@@ -250,3 +250,53 @@ FROM (
 ) t
 GROUP BY t.customer_id
 ORDER BY t.customer_id ASC;
+
+
+-- Q10: In the first week after a customer joins the program (including join date), 
+--      they earn 2x points on all items, not just sushi. 
+--      How many points do customer A and B have at the end of January?
+
+
+-- Step 1: Initial Exploratory Data Analysis (EDA)
+SELECT * FROM dannys_diner.sales;
+SELECT * FROM dannys_diner.members;
+
+-- Step 2: Final Solution (Linear CTE Pipeline)
+WITH cte_january_sales AS (
+    SELECT 
+        dds.customer_id,
+        dds.product_id,
+        dm.price,
+        dds.order_date,
+        ddm.join_date,
+        -- Calculating the exact boundary for the 7-day loyalty promotion window
+        DATEADD(day, 6, ddm.join_date) AS promo_end_date
+    FROM dannys_diner.sales dds
+    INNER JOIN dannys_diner.members ddm -- Using INNER JOIN because we only care about members A and B
+        ON dds.customer_id = ddm.customer_id
+    LEFT JOIN dannys_diner.menu dm
+        ON dds.product_id = dm.product_id
+    -- Restricting analysis strictly to January 2021
+    WHERE dds.order_date >= '2021-01-01' AND dds.order_date <= '2021-01-31'
+),
+
+cte_calculated_points AS (
+    SELECT
+        customer_id,
+        -- 3-Tier Multiplier Architecture
+        CASE 
+            -- Tier 1: Order falls within the active 7-day promotional window (All items = 2x)
+            WHEN order_date >= join_date AND order_date <= promo_end_date THEN price * 20
+            -- Tier 2: Order is outside promo window but item is Sushi (2x multiplier)
+            WHEN product_id = 1 THEN price * 20
+            -- Tier 3: Order is outside promo window and item is standard fare (1x multiplier)
+            ELSE price * 10
+        END AS [points]
+    FROM cte_january_sales
+)
+SELECT
+    customer_id,
+    SUM(points) AS [JanPoints]
+FROM cte_calculated_points
+GROUP BY customer_id
+ORDER BY customer_id ASC;
