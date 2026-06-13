@@ -196,3 +196,30 @@ INNER JOIN dannys_diner.menu dm
     ON ccr.product_id = dm.product_id
 WHERE orderrank = 1
 ORDER BY customer_id ASC;
+
+
+-- Question 8: What is the total items and amount spent for each member before they became a member?
+
+
+SELECT * FROM dannys_diner.members;
+SELECT * FROM dannys_diner.sales;
+
+WITH cte_pre_membertransactions AS(
+	
+	SELECT
+		dds.customer_id,
+		dds.product_id
+	FROM dannys_diner.sales dds
+	INNER JOIN dannys_diner.members ddm
+		ON dds.customer_id = ddm.customer_id
+	WHERE dds.order_date < ddm.join_date
+)
+SELECT
+	pmt.customer_id,
+	COUNT(pmt.product_id) AS [totalitem],
+	SUM(dm.price) AS [totalamtspent]
+FROM cte_pre_membertransactions pmt
+INNER JOIN dannys_diner.menu dm
+	ON pmt.product_id = dm.product_id
+GROUP BY pmt.customer_id
+ORDER BY pmt.customer_id ASC;
