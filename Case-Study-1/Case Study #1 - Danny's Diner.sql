@@ -223,3 +223,30 @@ INNER JOIN dannys_diner.menu dm
 	ON pmt.product_id = dm.product_id
 GROUP BY pmt.customer_id
 ORDER BY pmt.customer_id ASC;
+
+
+-- Q9: If each $1 spent equates to 10 points and sushi has a 2x points multiplier how many points would each customer have?
+
+-- Step 1: Initial Exploratory Data Analysis (EDA)
+SELECT * FROM dannys_diner.sales;
+SELECT * FROM dannys_diner.menu;
+
+-- Step 2: Final Solution (Nested Subquery Method)
+SELECT
+    t.customer_id,
+    SUM(t.points) AS [royaltypoints]
+FROM (
+    SELECT 
+        dds.customer_id,
+        dds.product_id,
+        --  Conditional logic: Sushi (ID: 1) earns 20 points per $1 (2x), others earn 10 points per $1
+        CASE 
+            WHEN dds.product_id = 1 THEN ddm.price * 20
+            ELSE ddm.price * 10
+        END AS [points]
+    FROM dannys_diner.sales dds
+    LEFT JOIN dannys_diner.menu ddm
+        ON dds.product_id = ddm.product_id
+) t
+GROUP BY t.customer_id
+ORDER BY t.customer_id ASC;
