@@ -158,3 +158,41 @@ INNER JOIN dannys_diner.menu dm
 	ON ccr.product_id = dm.product_id
 WHERE purchase_rank = 1
 ORDER BY ccr.customer_id;
+
+
+-- Q7: Which item was purchased just before the customer became a member?
+
+-- Initial Exploratory Data Analysis (EDA)
+SELECT * FROM dannys_diner.members;
+SELECT * FROM dannys_diner.sales;
+
+-- Final Solution (Linear CTE Pipeline)
+WITH cte_membertransaction AS (
+    SELECT
+        dds.customer_id,
+        dds.order_date,
+        dds.product_id
+    FROM dannys_diner.sales dds
+    INNER JOIN dannys_diner.members ddm
+        ON dds.customer_id = ddm.customer_id
+    WHERE dds.order_date < ddm.join_date
+),
+
+cte_chronologicalrank AS (
+    SELECT
+        customer_id,
+        order_date,
+        product_id,
+        --  ORDER BY DESC moves the absolute latest pre-membership purchase to rank 1
+        DENSE_RANK() OVER(PARTITION BY customer_id ORDER BY order_date DESC) [orderrank]
+    FROM cte_membertransaction
+)
+SELECT
+    ccr.customer_id,
+    ccr.order_date,
+    dm.product_name
+FROM cte_chronologicalrank ccr
+INNER JOIN dannys_diner.menu dm
+    ON ccr.product_id = dm.product_id
+WHERE orderrank = 1
+ORDER BY customer_id ASC;
