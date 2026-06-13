@@ -121,6 +121,40 @@ LEFT JOIN dannys_diner.menu dm
     ON t2.product_id = dm.product_id
 WHERE t2.highestorder = 1;
 
+-- Question 6: Which item was purchased first by the customer after they became a member?
 
+-- Initial Exploratory Data Analysis (EDA)
+SELECT * FROM dannys_diner.sales;
+SELECT * FROM dannys_diner.members;
 
+-- Final Solution (Linear CTE Pipeline)
+WITH cte_member_transaction AS(
+	
+	SELECT
+		dds.customer_id,
+		dds.order_date,
+		dds.product_id
+	FROM dannys_diner.sales dds
+	INNER JOIN dannys_diner.members ddm
+		ON dds.customer_id = ddm.customer_id
+	WHERE dds.order_date >= ddm.join_date
+),
+	
+cte_chronologicalrank AS(
+	SELECT
+		customer_id,
+		order_date,
+		product_id,
+		DENSE_RANK() OVER(PARTITION BY customer_id ORDER BY order_date ASC) AS [purchase_rank]
+	FROM cte_member_transaction
+)
 
+SELECT
+ ccr.customer_id,
+ ccr.order_date,
+ dm.product_name
+FROM cte_chronologicalrank ccr
+INNER JOIN dannys_diner.menu dm
+	ON ccr.product_id = dm.product_id
+WHERE purchase_rank = 1
+ORDER BY ccr.customer_id;
