@@ -19,7 +19,7 @@ As an aspiring Data Engineer, I use these case studies to showcase my ability to
 
 | Case Study | Project Name | Focus Areas | Status |
 | :--- | :--- | :--- | :--- |
-| **Case Study #1** | 🍜 Danny's Diner | *Customer Behavior, Cohort Analysis, Joins & Aggregations* | **In Progress 🛠️** |
+| **Case Study -1** | 🍜 Danny's Diner | *Customer Behavior, Cohort Analysis, Joins & Aggregations* | **In Progress 🛠️** |
 
 ---
 
